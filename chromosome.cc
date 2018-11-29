@@ -34,7 +34,6 @@ Chromosome::~Chromosome()
 void
 Chromosome::mutate()
 {
-    assert(is_valid());
     //set up our rng
     unsigned int range = order_.size() - 1;
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -50,6 +49,7 @@ Chromosome::mutate()
     unsigned int holder = order_.at(rand_2);
     order_[rand_2] = order_.at(rand_1);
     order_[rand_1] = holder;
+    assert(is_valid());
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -59,17 +59,23 @@ Chromosome::mutate()
 std::pair<Chromosome*, Chromosome*>
 Chromosome::recombine(const Chromosome* other)
 {
-    assert(is_valid());
-    assert(other->is_valid());
-    //`create_crossover_child` takes two ints also
-    auto child_1 = create_crossover_child(this, other, 0, 0);
-    auto child_2 = create_crossover_child(other, this, 0, 0);
-    // dunno what they do
-    // but this should help it compile
+  assert(is_valid());
+  assert(other->is_valid());
 
-    // std::pair<Chromosome*, Chromosome*> offspring_pair = <child_1, child_2>;//Might not be the right syntax to get this to work
-    std::pair<Chromosome*, Chromosome*> offspring_pair = std::make_pair(child_1, child_2);
-    return offspring_pair;
+  // need to include size() because create_crossover_child takes [b, e):
+  std::uniform_int_distribution<int> dist(0, order_.size());
+
+  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+  std::default_random_engine rng(seed);
+  auto r1 = dist(rng);
+  auto r2 = dist(rng);
+  auto [b, e] = std::minmax(r1, r2);
+
+  // Make children:
+  auto child1 = create_crossover_child(this, other, b, e);
+  auto child2 = create_crossover_child(other, this, b, e);
+
+  return std::make_pair(child1, child2);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -80,13 +86,15 @@ Chromosome*
 Chromosome::create_crossover_child(const Chromosome* p1, const Chromosome* p2,
                                    unsigned b, unsigned e) const
 {
+  const unsigned len = p1->order_.size();
+  assert(len == p2->order_.size());
   Chromosome* child = p1->clone();
 
   // We iterate over both parents separately, copying from parent1 if the
   // value is within [b,e) and from parent2 otherwise
   unsigned i = 0, j = 0;
 
-  for ( ; i < p1->order_.size() && j < p2->order_.size(); ++i) {
+  for ( ; i < len && j < len; ++i) {
     if (i >= b and i < e) {
       child->order_[i] = p1->order_[i];
     }
@@ -94,7 +102,7 @@ Chromosome::create_crossover_child(const Chromosome* p1, const Chromosome* p2,
       while (p1->is_in_range(p2->order_[j], b, e)) {
         ++j;
       }
-      assert(j < p2->order_.size());
+      assert(j < len);
       child->order_[i] = p2->order_[j];
       j++;
     }

@@ -4,7 +4,9 @@
  */
 #include <algorithm>
 #include <cmath>
+#include <cassert>
 #include "chromosome.hh"
+#include "climb_chromosome.hh"
 #include "deme.hh"
 #include <random>
 #include <chrono>
@@ -16,7 +18,7 @@ Deme::Deme(const Cities* cities_ptr, unsigned pop_size, double mut_rate)
     mut_rate_ = mut_rate;
     pop_=std::vector<Chromosome*>();
     for(unsigned i = 0; i < pop_size; i++ ) {
-	Chromosome* new_chrom = new Chromosome(cities_ptr);
+	ClimbChromosome* new_chrom = new ClimbChromosome(cities_ptr);
 	pop_.push_back(new_chrom);
     }
 }
@@ -46,7 +48,6 @@ Deme::~Deme()
 void Deme::compute_next_generation()
 {
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-
     std::default_random_engine generator (seed);
     unsigned int generation_size = pop_.size() / 2;
     std::vector<Chromosome*> children_vec({});
@@ -88,22 +89,22 @@ const Chromosome* Deme::get_best() const
 // return a pointer to that chromosome.
 Chromosome* Deme::select_parent()
 {
-    int s = 0;
-    for(auto f: pop_) {
-	s += f->get_fitness();
-    }
-    // s is now the sum of fitness
+  // Figure out what the total sum of fitness in pop_ is:
+  const double total_fitness = std::accumulate(pop_.cbegin(), pop_.cend(), 0.,
+      [](double sum, auto cp){ return sum + cp->get_fitness(); });
 
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::default_random_engine rng(seed);
-    std::uniform_int_distribution<int> distribution(0, pop_.size());
-    //generate a random value
-    int p = distribution(rng);
-    for(unsigned int i = 0; i < pop_.size(); i++) {
-	p = -pop_.at(i)->get_fitness();
-	if(p < 0) {
-	    return pop_.at(i);
-	}
-    }
-    return pop_.at(pop_.size() - 1);
+  // Pick a random fitness sum value to stop the wheel at:
+  static std::uniform_real_distribution<> dist(0.0, 1);
+  const double threshold = total_fitness * dist(generator_);
+
+  // Now, find the first chromosome whose partial sum of fitness exceeds threshold:
+  double fit_sum = 0.; // Total fitness so far
+
+  const auto it = std::find_if(pop_.cbegin(), pop_.cend(), [&](auto cp) {
+        fit_sum += cp->get_fitness();
+        return fit_sum >= threshold;
+   });
+  assert(it != pop_.cend());
+
+  return *it;
 }

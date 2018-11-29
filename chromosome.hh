@@ -14,11 +14,12 @@
 #include <random>
 
 class Chromosome {
+  protected:
    // Disable public copying of objects for polymorphism:
-  Chromosome(const Chromosome&) = delete;
-  Chromosome(Chromosome&&) = delete;
-  Chromosome& operator=(const Chromosome&) = delete;
-  Chromosome& operator=(Chromosome&&) = delete;
+  Chromosome(const Chromosome&) = default;
+  Chromosome(Chromosome&&) = default;
+  Chromosome& operator=(const Chromosome&) = default;
+  Chromosome& operator=(Chromosome&&) = default;
 
  public:
   // Creation method for new Chromsomoe. Saves a copy of the cities and
@@ -30,7 +31,7 @@ class Chromosome {
   // It is the caller's responsibility to free this memory.
   virtual Chromosome* clone() const
   {
-    return new Chromosome(cities_ptr_);
+    return new Chromosome(*this);
   }
 
   // Clean up as necessary

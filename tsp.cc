@@ -113,7 +113,7 @@ Cities::permutation_t ga_search(const Cities& cities,
 auto randomized_search(Cities city, unsigned int NUM_ITER) {
         const int number_of_cities = city.size();
 
-        Cities best_city({});
+        Cities best_city({});   
         double best_distance = std::numeric_limits<double>::infinity();
         Cities::permutation_t order = city.random_permutation(number_of_cities);
         Cities::permutation_t best_ordering = order;
@@ -156,8 +156,8 @@ int main(int argc, char** argv)
 
 
 //  const auto best_ordering = exhaustive_search(cities);
-// const auto best_ordering = ga_search(cities, NUM_ITER, pop_size, mut_rate);
- const auto best_ordering = randomized_search(cities, NUM_ITER);
+const auto best_ordering = ga_search(cities, NUM_ITER, pop_size, mut_rate);
+ //const auto best_ordering = randomized_search(cities, NUM_ITER);
 
   auto out = std::ofstream("shortest.tsv");
   if (!out.is_open()) {
