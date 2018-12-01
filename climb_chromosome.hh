@@ -5,7 +5,7 @@
 class ClimbChromosome : public Chromosome
 {
 	public:
-        //I think we need to explicitly write the constructor for this case
+        //I think we need to explicitly write the constructor for this case? testing agrees
         ClimbChromosome(const Cities* cities)
         : Chromosome(cities)
         {}
